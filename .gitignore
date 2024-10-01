@@ -1,2 +1,6 @@
 venv
 video.py
+data/images/train
+data/labels/train
+Squirtle and Bulbasaur Cute Moments.mp4
+models/matt_last.pt
