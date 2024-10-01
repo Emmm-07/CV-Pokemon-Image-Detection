@@ -1,0 +1,9 @@
+path: C:\Users\jmbal\PycharmProjects\Object Detection - YOLOv8 - Pokemon\data # dataset root dir
+train: images\train # train images
+val: images\train # val images          #should be images\val if for larger dataset
+
+# Classes
+names:
+  0: squirtle
+  1: charmander
+  2: bulbasaur
