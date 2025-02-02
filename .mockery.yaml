@@ -1,0 +1,9 @@
+with-expecter: true
+outpkg: mocks
+all: True
+dir: mocks/
+filename: "mock_{{.InterfaceName}}.go"
+packages:
+  enterprise-usermanagement/pkg/unit-test/interface:
+    interfaces: #add your interface here
+      UserInterface:

@@ -1,0 +1,74 @@
+#  Template Go (Golang) build
+
+#  This template allows you to validate your Go (Golang) code.
+#  The workflow allows running tests, build and code linting on the default branch.
+
+image: golang:1.22.4-alpine3.19
+
+build: &build
+    - step:
+        name: Test and Build
+        runs-on:
+          - enterprise.runner
+        script:
+          - sh ci-build.sh
+        artifacts:
+          - pkg/**
+          - cmd/**
+          - version.txt
+
+docker-build: &docker-build
+  - step:
+      name: build docker image
+      # runs-on:
+      #   - enterprise.runner
+      services:
+        - docker
+      script:
+        - IMAGE_TAG=$(cat version.txt)
+        - docker build -t $OCI_REGISTRY/$OCI_TENANT_NAMESPACE/enterprise-usermanagement:v$IMAGE_TAG -f CIDockerfile .
+        - docker save $OCI_REGISTRY/$OCI_TENANT_NAMESPACE/enterprise-usermanagement:v$IMAGE_TAG > image.tar
+      artifacts:
+        - image.tar
+
+push-image: &push-image  
+  - step:
+      name: push image to registry
+      runs-on:
+        - enterprise.runner
+      image: chainguard/crane:latest-dev
+      script:
+        - IMAGE_TAG=$(cat version.txt)
+        - crane auth login -u $OCI_TENANT_NAMESPACE/$OCI_REGISTRY_USERNAME -p $OCI_REGISTRY_PASSWORD $OCI_REGISTRY
+        - crane push image.tar $OCI_REGISTRY/$OCI_TENANT_NAMESPACE/enterprise-usermanagement:v$IMAGE_TAG
+
+test-deployment: &test-deployment
+  - step:
+      name: deploy to staging
+      deployment: staging
+      runs-on:
+        - enterprise.runner
+      script:
+        - export ENV=test
+        - sh deploy.sh
+prod-deployment: &prod-deployment
+  - step:
+      name: deploy to production
+      deployment: production
+      runs-on:
+        - enterprise.runner
+      trigger: manual
+      script:
+        - export ENV=prd
+        - sh deploy.sh
+
+pipelines:
+  default:
+    - <<: *build
+  custom:
+    oci-deployment:
+     - <<: *build
+     - <<: *docker-build
+     - <<: *push-image
+     - <<: *test-deployment
+     - <<: *prod-deployment
